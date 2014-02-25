@@ -15,7 +15,7 @@ define(['angular', 'config'], function (angular, config) {
                 }
             };
 
-            this.$get = [function () {
+            this.$get = ['$cookies', function ($cookies) {
                 return {
                     hasLogin: function () {
                         return hasLogin;
@@ -26,11 +26,12 @@ define(['angular', 'config'], function (angular, config) {
                     login: function (user, pass) {
                         hasLogin = true;
                         loginUser = user;
-                        console.log(user, pass);
+                        $cookies.user = user;
                     },
                     logOut: function () {
                         hasLogin = false;
                         loginUser = null;
+                        $cookies.user = void 0;
                     },
                     getLoginUser: function () {
                         return {

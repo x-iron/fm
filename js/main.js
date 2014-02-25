@@ -5,6 +5,7 @@ require.config({
         app: '../app',
         angular: '../../lib/angular/angular',
         'angular-route': '../../lib/angular/angular-route.min',
+        'angular-cookies': '../../lib/angular/angular-cookies.min',
         underscore: '../../lib/underscore/underscore-min',
         common: '../common',
         config: '../config'

@@ -1,7 +1,8 @@
-define(['angular', 'require', 'common', 'angular-route'], function (angular, require) {
+define(['angular', 'require', 'common', 'angular-route', 'angular-cookies'], function (angular, require) {
     'use strict';
     var app = angular.module('myApp', [
             'ngRoute',
+            'ngCookies',
             'myApp.common'
         ]).config(function (userProvider, $compileProvider, $controllerProvider, $routeProvider) {
             userProvider.asAdmin();
