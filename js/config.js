@@ -1,0 +1,3 @@
+define({
+    componentUrl : 'js/components/'
+});
