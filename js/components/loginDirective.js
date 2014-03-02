@@ -5,7 +5,6 @@ define(['app', 'config'], function (app, config) {
             controller: function ($scope, user) {
                 $scope.login = function () {
                     user.login($scope.userName, $scope.password);
-                    $scope.$emit('login');
                 };
             },
             templateUrl: config.componentUrl + 'loginTemplate.html'

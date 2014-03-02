@@ -1,10 +1,9 @@
 define(['app', 'config', 'underscore'], function (app, config, _) {
-    app.compileProvider.directive('fmPostLogin', ['user', '$q', function (user, $q) {
+    app.compileProvider.directive('fmPostLogin', ['user', '$q', '$location', '$timeout', function (user, $q, $location, $timeout) {
         return {
             restrict: 'E',
             scope: true,
             controller: function ($scope) {
-                console.log();
                 var userObj = user.getLoginUser();
                 $scope.userName = userObj.name;
                 $scope.logOut = function () {
@@ -16,6 +15,7 @@ define(['app', 'config', 'underscore'], function (app, config, _) {
                 function configRoute(cmps) {
                     var serviceName = 'service';
                     _.forEach(cmps, function (cmp) {
+                        console.log('config')
                         app.routeProvider.when('/' + cmp, {
                             templateUrl: config.componentUrl + cmp + 'Template.html',
                             controller: [serviceName, function (service) {
@@ -38,7 +38,17 @@ define(['app', 'config', 'underscore'], function (app, config, _) {
                     return resolve;
                 }
             },
-            templateUrl: config.componentUrl + 'postLoginTemplate.html'
+            templateUrl: config.componentUrl + 'postLoginTemplate.html',
+            link: function (scope, el) {
+                var path = $location.path();
+                path == '/login' && (path = '/welcome');
+                $location.path('/');
+                el.ready(function () {
+                    scope.$apply(function () {
+                        $location.path(path);
+                    });
+                });
+            }
         }
     }]);
 });

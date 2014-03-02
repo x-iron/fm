@@ -3,12 +3,14 @@ define(['angular', 'require', 'common', 'angular-route', 'angular-cookies'], fun
     var app = angular.module('myApp', [
             'ngRoute',
             'ngCookies',
+            'myApp.api',
             'myApp.common'
-        ]).config(function (userProvider, $compileProvider, $controllerProvider, $routeProvider) {
+        ]).config(function (userProvider, $compileProvider, $controllerProvider, $routeProvider, $locationProvider) {
             userProvider.asAdmin();
             app.compileProvider = $compileProvider;
             app.controllerProvider = $controllerProvider;
             app.routeProvider = $routeProvider;
+            app.locationProvider = $locationProvider;
 
         }).directive('fmMain', function ($compile, user, $location) {
             return {
@@ -17,18 +19,21 @@ define(['angular', 'require', 'common', 'angular-route', 'angular-cookies'], fun
                     $scope.user = user; //used for watch
                 },
                 link: function (scope, elm, attrs) {
+                    user.checkLogin();
                     scope.$watch('user.hasLogin()', function (hasLogin) {
                         elm.empty();
-                        if (!hasLogin) {
+                        if (hasLogin === undefined) {
+                            console.log('wait for check login')
+                        } else if (!hasLogin) {
                             require(['loginDirective'], function () {
                                 elm.append($compile('<fm-login/>')(scope));
+                                $location.path('login');
                             });
                         } else {
                             require(['postLoginDirective'], function () {
                                 elm.append($compile('<fm-post-login/>')(scope));
                             });
                         }
-                        $location.path(hasLogin ? 'welcome' : 'login');
                     });
                 }
             };

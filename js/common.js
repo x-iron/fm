@@ -1,10 +1,10 @@
-define(['angular', 'config'], function (angular, config) {
+define(['angular', 'config', 'api'], function (angular, config) {
     'use strict';
     angular.module('myApp.common', [])
         .provider('user', function () {
             var isAdmin = false;
             var loginUser = null;
-            var hasLogin = false;
+            var hasLogin = undefined;
             this.asAdmin = function () {
                 isAdmin = true;
             };
@@ -15,18 +15,29 @@ define(['angular', 'config'], function (angular, config) {
                 }
             };
 
-            this.$get = ['$cookies', function ($cookies) {
+            this.$get = ['$cookies' , 'userApi', '$rootScope', function ($cookies, userApi, $rootScope) {
                 return {
                     hasLogin: function () {
                         return hasLogin;
+                    },
+                    checkLogin: function () {
+                        userApi.checkLogin().then(function (o) {
+                            hasLogin = o.logined;
+                            loginUser = o.name;
+                            console.log('login state change', hasLogin)
+                        });
                     },
                     isAdmin: function () {
                         return hasLogin && isAdmin;
                     },
                     login: function (user, pass) {
-                        hasLogin = true;
-                        loginUser = user;
-                        $cookies.user = user;
+                        var promise = userApi.login(user, pass);
+                        promise.then(function () {
+                            hasLogin = true;
+                            loginUser = user;
+                            $cookies.user = user;
+                        });
+                        return promise;
                     },
                     logOut: function () {
                         hasLogin = false;
@@ -61,7 +72,7 @@ define(['angular', 'config'], function (angular, config) {
                     save: function (user) {
 
                     },
-                    delete: function(user) {
+                    delete: function (user) {
 
                     }
                 };

@@ -8,12 +8,14 @@ require.config({
         'angular-cookies': '../../lib/angular/angular-cookies.min',
         underscore: '../../lib/underscore/underscore-min',
         common: '../common',
+        api: '../api',
         config: '../config'
     },
     shim: {
         'angular': {'exports': 'angular'},
         'underscore': {'exports': '_'},
-        'angular-route': { deps: ['angular']}
+        'angular-route': { deps: ['angular']},
+        'angular-cookies': { deps: ['angular']}
     },
     urlArgs: 'v=0.1'
 });
