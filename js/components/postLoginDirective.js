@@ -1,9 +1,9 @@
-define(['app', 'config', 'underscore'], function (app, config, _) {
-    app.compileProvider.directive('fmPostLogin', ['user', '$q', '$location', '$timeout', function (user, $q, $location, $timeout) {
+define(['require', 'app', 'config', 'underscore'], function (require, app, config, _) {
+    app.compileProvider.directive('fmPostLogin', ['user', '$q', '$location', function (user, $q, $location) {
         return {
             restrict: 'E',
             scope: true,
-            controller: function ($scope) {
+            controller: function ($scope, loader) {
                 var userObj = user.getLoginUser();
                 $scope.userName = userObj.name;
                 $scope.logOut = function () {
@@ -11,15 +11,22 @@ define(['app', 'config', 'underscore'], function (app, config, _) {
                     $scope.$destroy();
                 };
                 configRoute(['m1', 'manageUsers']);
-
+                $scope.$on('$routeChangeStart', function() {
+                    loader.show();
+                });
+                $scope.$on('$routeChangeSuccess', function() {
+                    loader.hide();
+                });
+                $scope.$on('session.timeout', function(e) {
+                   user.logOut(false);
+                });
                 function configRoute(cmps) {
                     var serviceName = 'service';
                     _.forEach(cmps, function (cmp) {
-                        console.log('config')
                         app.routeProvider.when('/' + cmp, {
                             templateUrl: config.componentUrl + cmp + 'Template.html',
-                            controller: [serviceName, function (service) {
-                                $scope.service = service;
+                            controller: [serviceName, '$injector', function (service, $injector) {
+                                $scope.service = service.$get($scope, $injector);
                             }],
                             resolve: resolveFactory(serviceName, cmp)
                         });

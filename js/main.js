@@ -19,10 +19,10 @@ require.config({
     },
     urlArgs: 'v=0.1'
 });
-require(['angular', 'app'], function (angular) {
+require(['angular','config', 'app'], function (angular, config) {
     angular.element(document).ready(
         function () {
-            angular.bootstrap(document, ['myApp']);
+            angular.bootstrap(document, [config.appName]);
         }
     );
 });

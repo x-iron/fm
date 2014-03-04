@@ -1,6 +1,6 @@
-define(['angular', 'require', 'common', 'angular-route', 'angular-cookies'], function (angular, require) {
+define(['angular', 'require', 'config', 'common', 'angular-route', 'angular-cookies'], function (angular, require, config) {
     'use strict';
-    var app = angular.module('myApp', [
+    var app = angular.module(config.appName, [
             'ngRoute',
             'ngCookies',
             'myApp.api',
@@ -23,7 +23,7 @@ define(['angular', 'require', 'common', 'angular-route', 'angular-cookies'], fun
                     scope.$watch('user.hasLogin()', function (hasLogin) {
                         elm.empty();
                         if (hasLogin === undefined) {
-                            console.log('wait for check login')
+                            elm.html('please wait...');
                         } else if (!hasLogin) {
                             require(['loginDirective'], function () {
                                 elm.append($compile('<fm-login/>')(scope));

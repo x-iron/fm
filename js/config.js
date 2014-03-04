@@ -1,3 +1,4 @@
 define({
-    componentUrl : 'js/components/'
+    componentUrl : 'js/components/',
+    appName: 'myApp'
 });

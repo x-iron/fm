@@ -39,10 +39,13 @@ define(['angular', 'config', 'api'], function (angular, config) {
                         });
                         return promise;
                     },
-                    logOut: function () {
+                    logOut: function (remote) {
                         hasLogin = false;
                         loginUser = null;
-                        $cookies.user = void 0;
+                        if (false === remote) {
+                            return;
+                        }
+                        userApi.logout();
                     },
                     getLoginUser: function () {
                         return {
@@ -77,6 +80,31 @@ define(['angular', 'config', 'api'], function (angular, config) {
                     }
                 };
             }
+        })
+        .provider('loader', function() {
+            this.$get = function() {
+                var counter = 0;
+                var dom = null;
+                return {
+                    show: function() {
+                        counter++;
+                        counter == 1 && showLoader();
+                    },
+                    hide: function() {
+                        counter && counter--;
+                        counter || hideLoader();
+                    }
+                };
+                function hideLoader() {
+                    dom && dom.remove();
+                }
+
+                function showLoader() {
+                    dom = angular.element(document.createElement('div'));
+                    dom.addClass('fm-loader');
+                    angular.element(document.body).append(dom);
+                }
+            };
         })
         .provider('cssLoader', function () {
             this.$get = function ($log) {
