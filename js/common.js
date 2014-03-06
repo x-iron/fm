@@ -81,16 +81,16 @@ define(['angular', 'config', 'api'], function (angular, config) {
                 };
             }
         })
-        .provider('loader', function() {
-            this.$get = function() {
+        .provider('loader', function () {
+            this.$get = function () {
                 var counter = 0;
                 var dom = null;
                 return {
-                    show: function() {
+                    show: function () {
                         counter++;
                         counter == 1 && showLoader();
                     },
-                    hide: function() {
+                    hide: function () {
                         counter && counter--;
                         counter || hideLoader();
                     }
@@ -140,6 +140,20 @@ define(['angular', 'config', 'api'], function (angular, config) {
                 restrict: 'A',
                 link: function (scope, el, attrs) {
                     cssLoader.load(attrs.fmCss);
+                }
+            }
+        })
+        .directive('fmCmp', function () {
+            return {
+                restrict: 'A',
+                templateUrl: function (el, attrs) {
+                    return config.componentUrl + attrs.fmCmp + '.html';
+                },
+                compile: function(el, attrs) {
+                    console.log(el);
+                    return function() {
+
+                    };
                 }
             }
         })
