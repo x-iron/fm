@@ -150,6 +150,7 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                     var cmp = attrs.fmOpen;
                     var target = attrs.fmOpenAt;
                     var windowWidth = attrs.fmWindowWidth || '400px';
+                    var windowTitle = attrs.fmWindowTitle || '';
                     var containers = {
                         'window': angular.element(document.body)
                     };
@@ -159,6 +160,7 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                     template.attr(cmp.replace(/([A-Z])/, '-$1'), '');
                     openAtWindow && template.attr('fm-window', '');
                     openAtWindow && template.attr('fm-window-width', windowWidth);
+                    openAtWindow && template.attr('fm-window-title', windowTitle);
                     loader.show();
                     require([cmp], function() {
                         loader.hide();
@@ -176,20 +178,24 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
             return {
                 restrict: 'A',
                 link: function(scope, el, attrs) {
-                    var win = angular.element('<div class="fm-ui-popup-container"></div>');
+                    var win = angular.element('<div class="fm-ui-popup-container panel panel-primary"></div>');
                     var maskLayer = angular.element('<div class="fm-ui-popup-maskLayer"></div>');
                     win.css('width', attrs.fmWindowWidth);
                     win.css('z-index', ++zIndex);
                     maskLayer.css('z-index', zIndex - 1);
                     angular.element(document.body).append(maskLayer);
-                    var closeBtn = angular.element('<div>close</div>');
+                    var closeBtn = angular.element('<div class="fm-ui-popup-cross">✕</div>');
+                    var header = angular.element('<div class="panel-heading"></div>');
+                    header.append('<span class="panel-title">'+attrs.fmWindowTitle+'</span>');
+                    header.append(closeBtn);
                     closeBtn.on('click', function() {
                         win.remove();
                         zIndex--;
                         maskLayer.remove();
                     });
-                    el.prepend(closeBtn);
                     el.wrap(win);
+                    win.prepend(header);
+                    el.addClass('panel-body');
                 }
             };
         })

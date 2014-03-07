@@ -115,10 +115,16 @@ body {
     left: 0;
     right: 0;
     background: white;
-    border: 1px solid blue;
 }
 fm-view{
     display: block;
 }
 
+.panel-title {
+    float: left;
+}
+.fm-ui-popup-cross {
+    overflow: hidden;
+    text-align: right;
+}
 
