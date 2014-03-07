@@ -1,6 +1,14 @@
-<div fm-css="manageUsers">
-    m2Template11
-    <button ng-click='service.btimeout()'>broadcast session time out</button>
-    <div fm-cmp="addUser" fm-popup-window>add user</div>
-    <div>list user</div>
+<div fm-css="manageUsers" class="col-sm-3 col-md-2 sidebar">
+    <ul class="nav nav-sidebar">
+        <li fm-open="addUser" fm-open-at="window" fm-window-width="400px">
+            <a>add user</a>
+        </li>
+        <li fm-open="listUsers" fm-open-at="fm-view">
+            <a>list user</a>
+        </li>
+    </ul>
 </div>
+</div>
+<fm-view class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+    <div class="page-header">{{title}}</div>
+</fm-view>

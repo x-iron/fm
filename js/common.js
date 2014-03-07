@@ -1,4 +1,4 @@
-define(['angular', 'config', 'api'], function (angular, config) {
+define(['angular', 'config', 'underscore', 'require', 'api'], function (angular, config, _, require) {
     'use strict';
     angular.module('myApp.common', [])
         .provider('user', function () {
@@ -75,7 +75,7 @@ define(['angular', 'config', 'api'], function (angular, config) {
                     save: function (user) {
 
                     },
-                    delete: function (user) {
+                    remove: function (user) {
 
                     }
                 };
@@ -143,19 +143,55 @@ define(['angular', 'config', 'api'], function (angular, config) {
                 }
             }
         })
-        .directive('fmCmp', function () {
+        .directive('fmOpen', function ($compile, loader) {
             return {
                 restrict: 'A',
-                templateUrl: function (el, attrs) {
-                    return config.componentUrl + attrs.fmCmp + '.html';
-                },
-                compile: function(el, attrs) {
-                    console.log(el);
-                    return function() {
-
+                link: function(scope, el, attrs) {
+                    var cmp = attrs.fmOpen;
+                    var target = attrs.fmOpenAt;
+                    var windowWidth = attrs.fmWindowWidth || '400px';
+                    var containers = {
+                        'window': angular.element(document.body)
                     };
+                    var openAtWindow = (target == 'window');
+                    var container = containers[target] || angular.element(document.body).find(target);
+                    var template = angular.element('<div></div>');
+                    template.attr(cmp.replace(/([A-Z])/, '-$1'), '');
+                    openAtWindow && template.attr('fm-window', '');
+                    openAtWindow && template.attr('fm-window-width', windowWidth);
+                    loader.show();
+                    require([cmp], function() {
+                        loader.hide();
+                        el.on('click', function() {
+                            !openAtWindow && (scope.title = cmp);
+                            var cmpDom = $compile(template)(scope);
+                            container.append(cmpDom);
+                        });
+                    });
                 }
             }
+        })
+        .directive('fmWindow', function () {
+            var zIndex = 10000;
+            return {
+                restrict: 'A',
+                link: function(scope, el, attrs) {
+                    var win = angular.element('<div class="fm-ui-popup-container"></div>');
+                    var maskLayer = angular.element('<div class="fm-ui-popup-maskLayer"></div>');
+                    win.css('width', attrs.fmWindowWidth);
+                    win.css('z-index', ++zIndex);
+                    maskLayer.css('z-index', zIndex - 1);
+                    angular.element(document.body).append(maskLayer);
+                    var closeBtn = angular.element('<div>close</div>');
+                    closeBtn.on('click', function() {
+                        win.remove();
+                        zIndex--;
+                        maskLayer.remove();
+                    });
+                    el.prepend(closeBtn);
+                    el.wrap(win);
+                }
+            };
         })
         .directive('requireAdmin', function (user) {
             return {
