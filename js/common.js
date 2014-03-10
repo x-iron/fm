@@ -146,7 +146,7 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
         .directive('fmOpen', function ($compile, loader) {
             return {
                 restrict: 'A',
-                link: function(scope, el, attrs) {
+                link: function (scope, el, attrs) {
                     var cmp = attrs.fmOpen;
                     var target = attrs.fmOpenAt;
                     var windowWidth = attrs.fmWindowWidth || '400px';
@@ -156,15 +156,16 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                     };
                     var openAtWindow = (target == 'window');
                     var container = containers[target] || angular.element(document.body).find(target);
-                    var template = angular.element('<div></div>');
-                    template.attr(cmp.replace(/([A-Z])/, '-$1'), '');
-                    openAtWindow && template.attr('fm-window', '');
-                    openAtWindow && template.attr('fm-window-width', windowWidth);
-                    openAtWindow && template.attr('fm-window-title', windowTitle);
+
                     loader.show();
-                    require([cmp], function() {
+                    require([cmp], function () {
                         loader.hide();
-                        el.on('click', function() {
+                        el.on('click', function () {
+                            var template = angular.element('<div></div>');
+                            template.append(angular.element('<div></div>').attr(cmp.replace(/([A-Z])/, '-$1'), ''));
+                            openAtWindow && template.attr('fm-window', '');
+                            openAtWindow && template.attr('fm-window-width', windowWidth);
+                            openAtWindow && template.attr('fm-window-title', windowTitle);
                             !openAtWindow && (scope.title = cmp);
                             var cmpDom = $compile(template)(scope);
                             container.append(cmpDom);
@@ -177,27 +178,42 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
             var zIndex = 10000;
             return {
                 restrict: 'A',
-                link: function(scope, el, attrs) {
-                    var win = angular.element('<div class="fm-ui-popup-container panel panel-primary"></div>');
-                    var maskLayer = angular.element('<div class="fm-ui-popup-maskLayer"></div>');
+                replace: true,
+                link: function (scope, el, attrs) {
+                    increaseZIndex();
+                    var win = el;
                     win.css('width', attrs.fmWindowWidth);
-                    win.css('z-index', ++zIndex);
+                    win.css('z-index', zIndex);
+
+                    var maskLayer = angular.element('<div class="fm-ui-popup-maskLayer"></div>');
                     maskLayer.css('z-index', zIndex - 1);
                     angular.element(document.body).append(maskLayer);
-                    var closeBtn = angular.element('<div class="fm-ui-popup-cross">✕</div>');
-                    var header = angular.element('<div class="panel-heading"></div>');
-                    header.append('<span class="panel-title">'+attrs.fmWindowTitle+'</span>');
-                    header.append(closeBtn);
-                    closeBtn.on('click', function() {
+
+                    var closeBtn = win.find('span').next();
+                    closeBtn.on('click', function () {
                         win.remove();
-                        zIndex--;
                         maskLayer.remove();
+                        decreaseZIndex();
                     });
-                    el.wrap(win);
-                    win.prepend(header);
-                    el.addClass('panel-body');
-                }
+                },
+                template: function (el, attrs) {
+                    return '<div class="fm-ui-popup-container panel panel-primary">' +
+                        '<div class="panel-heading">' +
+                        '<span class="panel-title">' + attrs.fmWindowTitle + '</span>' +
+                        '<div class="fm-ui-popup-cross">✕</div>' +
+                        '</div>' +
+                        '<div class="panel-body" ng-transclude></div>' +
+                        '</div>'
+                },
+                transclude: true
             };
+            function increaseZIndex() {
+                zIndex = zIndex + 2;
+            }
+
+            function decreaseZIndex() {
+                zIndex = zIndex - 2;
+            }
         })
         .directive('requireAdmin', function (user) {
             return {

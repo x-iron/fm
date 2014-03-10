@@ -120,11 +120,7 @@ fm-view{
     display: block;
 }
 
-.panel-title {
-    float: left;
-}
 .fm-ui-popup-cross {
-    overflow: hidden;
-    text-align: right;
+    float: right;
 }
 
