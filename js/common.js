@@ -150,7 +150,7 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                     var cmp = attrs.fmOpen;
                     var target = attrs.fmOpenAt;
                     var windowWidth = attrs.fmWindowWidth || '400px';
-                    var windowTitle = attrs.fmWindowTitle || '';
+                    var title = attrs.fmTitle || '';
                     var containers = {
                         'window': angular.element(document.body)
                     };
@@ -161,12 +161,15 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                     require([cmp], function () {
                         loader.hide();
                         el.on('click', function () {
-                            var template = angular.element('<div></div>');
-                            template.append(angular.element('<div></div>').attr(cmp.replace(/([A-Z])/, '-$1'), ''));
+                            var template = angular.element('<div fm-container></div>');
+                            template.append(angular.element('<div fm-cmp></div>').attr(cmp.replace(/([A-Z])/g, '-$1'), ''));
                             openAtWindow && template.attr('fm-window', '');
                             openAtWindow && template.attr('fm-window-width', windowWidth);
-                            openAtWindow && template.attr('fm-window-title', windowTitle);
-                            !openAtWindow && (scope.title = cmp);
+                            openAtWindow && template.attr('fm-window-title', title);
+                            if (!openAtWindow) {
+                                scope.title = title;
+                                container.empty();
+                            }
                             var cmpDom = $compile(template)(scope);
                             container.append(cmpDom);
                         });
@@ -178,6 +181,7 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
             var zIndex = 10000;
             return {
                 restrict: 'A',
+                scope: true,
                 replace: true,
                 link: function (scope, el, attrs) {
                     increaseZIndex();
@@ -189,18 +193,18 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                     maskLayer.css('z-index', zIndex - 1);
                     angular.element(document.body).append(maskLayer);
 
-                    var closeBtn = win.find('span').next();
-                    closeBtn.on('click', function () {
+                    scope.close = function () {
                         win.remove();
                         maskLayer.remove();
                         decreaseZIndex();
-                    });
+                        scope.$destroy();
+                    };
                 },
                 template: function (el, attrs) {
                     return '<div class="fm-ui-popup-container panel panel-primary">' +
                         '<div class="panel-heading">' +
                         '<span class="panel-title">' + attrs.fmWindowTitle + '</span>' +
-                        '<div class="fm-ui-popup-cross">✕</div>' +
+                        '<div class="fm-ui-popup-cross" ng-click="close()">✕</div>' +
                         '</div>' +
                         '<div class="panel-body" ng-transclude></div>' +
                         '</div>'
