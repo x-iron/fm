@@ -193,22 +193,27 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                     $scope.maskStyle = {
                         'z-index': zIndex - 1
                     };
-                    this.close = function () {
-                        decreaseZIndex();
-                        $scope.$destroy();
-                        $element.remove();
-                    };
-                    this.going2Close = function() {
-                        $scope.$broadcast('going2Close');
+                    this.close = function (promise) {
+                        _.isObject(promise) ? promise.then(closeFn) : closeFn();
+                        function closeFn() {
+                            decreaseZIndex();
+                            $scope.$destroy();
+                            $element.remove();
+                        }
                     };
                 }],
+                link: function (scope) {
+                    var safeClose = scope.ctrl.safeClose;
+                    var close = scope.ctrl.close;
+                    scope.ctrl.safeClose = (_.isFunction(safeClose) ? safeClose : close);
+                },
                 controllerAs: 'ctrl',
                 transclude: true,
                 template: '<div>' +
                     ' <div class="fm-ui-popup-container panel panel-primary" ng-style="winStyle">' +
                     '  <div class="panel-heading">' +
                     '   <span class="panel-title" ng-bind="fmTitle"></span>' +
-                    '   <div class="fm-ui-popup-cross" ng-click="ctrl.going2Close()">✕</div>' +
+                    '   <div class="fm-ui-popup-cross" ng-click="ctrl.safeClose()">✕</div>' +
                     '  </div>' +
                     '  <div class="panel-body" ng-transclude></div>' +
                     ' </div>' +
