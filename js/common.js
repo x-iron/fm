@@ -183,33 +183,35 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                 restrict: 'A',
                 scope: true,
                 replace: true,
-                link: function (scope, el, attrs) {
+                controller: ['$scope', '$element', '$attrs', function ($scope, $element, $attrs) {
                     increaseZIndex();
-                    var win = el;
-                    win.css('width', attrs.fmWindowWidth);
-                    win.css('z-index', zIndex);
-
-                    var maskLayer = angular.element('<div class="fm-ui-popup-maskLayer"></div>');
-                    maskLayer.css('z-index', zIndex - 1);
-                    angular.element(document.body).append(maskLayer);
-
-                    scope.close = function () {
-                        win.remove();
-                        maskLayer.remove();
-                        decreaseZIndex();
-                        scope.$destroy();
+                    $scope.winStyle = {
+                        width: $attrs.fmWindowWidth,
+                        'z-index': zIndex
                     };
-                },
-                template: function (el, attrs) {
-                    return '<div class="fm-ui-popup-container panel panel-primary">' +
-                        '<div class="panel-heading">' +
-                        '<span class="panel-title">' + attrs.fmWindowTitle + '</span>' +
-                        '<div class="fm-ui-popup-cross" ng-click="close()">✕</div>' +
-                        '</div>' +
-                        '<div class="panel-body" ng-transclude></div>' +
-                        '</div>'
-                },
-                transclude: true
+                    $scope.maskStyle = {
+                        'z-index': zIndex - 1
+                    };
+                    $scope.title = $attrs.fmWindowTitle;
+                    this.close = function () {
+                        decreaseZIndex();
+                        $scope.$destroy();
+                        $element.remove();
+                    };
+                }],
+                controllerAs: 'ctrl',
+                transclude: true,
+                template: '<div>' +
+                    '<div class="fm-ui-popup-container panel panel-primary" ng-style="winStyle">' +
+                    ' <div class="panel-heading">' +
+                    '  <span class="panel-title" ng-bind="title"></span>' +
+                    '  <div class="fm-ui-popup-cross" ng-click="ctrl.close()">✕</div>' +
+                    ' </div>' +
+                    ' <div class="panel-body" ng-transclude></div>' +
+                    '</div>' +
+                    '<div ng-style="maskStyle" class="fm-ui-popup-maskLayer"></div>' +
+                    '</div>'
+
             };
             function increaseZIndex() {
                 zIndex = zIndex + 2;
