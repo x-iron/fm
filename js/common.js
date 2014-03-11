@@ -156,16 +156,15 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                     };
                     var openAtWindow = (target == 'window');
                     var container = containers[target] || angular.element(document.body).find(target);
-
-                    loader.show();
-                    require([cmp], function () {
-                        loader.hide();
-                        el.on('click', function () {
+                    el.on('click', function () {
+                        loader.show();
+                        require([cmp], function () {
+                            loader.hide();
                             var template = angular.element('<div fm-container></div>');
                             template.append(angular.element('<div fm-cmp></div>').attr(cmp.replace(/([A-Z])/g, '-$1'), ''));
                             openAtWindow && template.attr('fm-window', '');
-                            openAtWindow && template.attr('fm-window-width', windowWidth);
-                            openAtWindow && template.attr('fm-window-title', title);
+                            openAtWindow && template.attr('fm-width', windowWidth);
+                            openAtWindow && template.attr('fm-title', title);
                             if (!openAtWindow) {
                                 scope.title = title;
                                 container.empty();
@@ -183,33 +182,37 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                 restrict: 'A',
                 scope: true,
                 replace: true,
-                controller: ['$scope', '$element', '$attrs', function ($scope, $element, $attrs) {
+                controller: ['$scope', '$element', '$attrs', '$transclude', function ($scope, $element, $attrs, $transclude) {
+                    $scope.fmTitle = $attrs.fmTitle;
+                    var fmWidth = $attrs.fmWidth;
                     increaseZIndex();
                     $scope.winStyle = {
-                        width: $attrs.fmWindowWidth,
+                        width: fmWidth,
                         'z-index': zIndex
                     };
                     $scope.maskStyle = {
                         'z-index': zIndex - 1
                     };
-                    $scope.title = $attrs.fmWindowTitle;
                     this.close = function () {
                         decreaseZIndex();
                         $scope.$destroy();
                         $element.remove();
                     };
+                    this.going2Close = function() {
+                        $scope.$broadcast('going2Close');
+                    };
                 }],
                 controllerAs: 'ctrl',
                 transclude: true,
                 template: '<div>' +
-                    '<div class="fm-ui-popup-container panel panel-primary" ng-style="winStyle">' +
-                    ' <div class="panel-heading">' +
-                    '  <span class="panel-title" ng-bind="title"></span>' +
-                    '  <div class="fm-ui-popup-cross" ng-click="ctrl.close()">✕</div>' +
+                    ' <div class="fm-ui-popup-container panel panel-primary" ng-style="winStyle">' +
+                    '  <div class="panel-heading">' +
+                    '   <span class="panel-title" ng-bind="fmTitle"></span>' +
+                    '   <div class="fm-ui-popup-cross" ng-click="ctrl.going2Close()">✕</div>' +
+                    '  </div>' +
+                    '  <div class="panel-body" ng-transclude></div>' +
                     ' </div>' +
-                    ' <div class="panel-body" ng-transclude></div>' +
-                    '</div>' +
-                    '<div ng-style="maskStyle" class="fm-ui-popup-maskLayer"></div>' +
+                    ' <div ng-style="maskStyle" class="fm-ui-popup-maskLayer"></div>' +
                     '</div>'
 
             };
