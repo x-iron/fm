@@ -135,6 +135,95 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                 };
             }
         })
+        .provider('popupMsg', function () {
+            function fn($compile, $rootScope) {
+                return {
+                    alert: function (config) {
+                        var scope = buildScope(config);
+                        scope.title = 'alert';
+                        display('fm-popup-alert', scope);
+                    },
+                    confirm: function (config) {
+                        var scope = buildScope(config);
+                        scope.title = 'confirm';
+                        display('fm-popup-confirm', scope);
+                    }
+                };
+
+                function buildScope(config) {
+                    var msg = config.msg;
+                    var deferred = config.deferred;
+                    var scope = $rootScope.$new();
+                    scope.deferred = deferred;
+                    scope.msg = msg;
+                    return scope;
+                }
+
+                function display(directive, scope) {
+                    angular.element(document.body).append($compile('<div ' + directive + '></div>')(scope));
+                }
+            }
+
+            this.$get = ['$compile', '$rootScope', fn];
+        })
+        .directive('fmPopupAlert', function () {
+            return {
+                restrict: 'A',
+                controller: function($scope, $element) {
+                    this.ok = action;
+                    $scope.$on('$destroy', function() {
+                        $element.remove();
+                    });
+                    $scope.$on('fmWindowClose', function() {
+                        action();
+                    });
+                    function action() {
+                        var deferred = $scope.deferred;
+                        deferred.resolve();
+                        $scope.$destroy();
+                    }
+                },
+                controllerAs: 'ctrl',
+                template: '<div fm-window fm-title="{{title}}">' +
+                    ' <p ng-bind="msg"></p>' +
+                    ' <div>' +
+                    '   <button ng-click="ctrl.ok()" class="btn btn-primary">OK</button>' +
+                    ' </div>' +
+                    '</div>'
+            }
+        })
+        .directive('fmPopupConfirm', function (cssLoader) {
+            return {
+                restrict: 'A',
+                controller: function($scope, $element) {
+                    this.yes = function() {
+                        action(true);
+                    };
+                    this.no = function() {
+                        action(false);
+                    };
+                    $scope.$on('$destroy', function() {
+                        $element.remove();
+                    });
+                    $scope.$on('fmWindowClose', function() {
+                        action(false);
+                    });
+                    function action(yes) {
+                        var deferred = $scope.deferred;
+                        yes ? deferred.resolve() : deferred.reject();
+                        $scope.$destroy();
+                    }
+                },
+                controllerAs: 'ctrl',
+                template: '<div fm-window fm-title="{{title}}">' +
+                    ' <p ng-bind="msg"></p>' +
+                    ' <div>' +
+                    '  <button ng-click="ctrl.no()" class="btn btn-primary">No</button>' +
+                    '  <button ng-click="ctrl.yes()" class="btn btn-primary">Yes</button>' +
+                    ' </div>' +
+                    '</div>'
+            }
+        })
         .directive('fmCss', function (cssLoader) {
             return {
                 restrict: 'A',
@@ -149,8 +238,8 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                 link: function (scope, el, attrs) {
                     var cmp = attrs.fmOpen;
                     var target = attrs.fmOpenAt;
-                    var windowWidth = attrs.fmWindowWidth || '400px';
                     var title = attrs.fmTitle || '';
+                    var windowWidth = attrs.fmWindowWidth;
                     var containers = {
                         'window': angular.element(document.body)
                     };
@@ -183,8 +272,7 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                 scope: true,
                 replace: true,
                 controller: ['$scope', '$element', '$attrs', '$transclude', function ($scope, $element, $attrs, $transclude) {
-                    $scope.fmTitle = $attrs.fmTitle;
-                    var fmWidth = $attrs.fmWidth;
+                    var fmWidth = $attrs.fmWidth || '400px';
                     increaseZIndex();
                     $scope.winStyle = {
                         width: fmWidth,
@@ -193,16 +281,20 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                     $scope.maskStyle = {
                         'z-index': zIndex - 1
                     };
+                    $scope.$on('$destroy', function() {
+                        decreaseZIndex();
+                        $element.remove();
+                    });
                     this.close = function (promise) {
                         _.isObject(promise) ? promise.then(closeFn) : closeFn();
                         function closeFn() {
-                            decreaseZIndex();
+                            $scope.$emit('fmWindowClose');
                             $scope.$destroy();
-                            $element.remove();
                         }
                     };
                 }],
-                link: function (scope) {
+                link: function (scope, el, attrs) {
+                    scope.fmTitle = attrs.fmTitle;   // wait for interpolate
                     var safeClose = scope.ctrl.safeClose;
                     var close = scope.ctrl.close;
                     scope.ctrl.safeClose = (_.isFunction(safeClose) ? safeClose : close);
@@ -213,7 +305,7 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                     ' <div class="fm-ui-popup-container panel panel-primary" ng-style="winStyle">' +
                     '  <div class="panel-heading">' +
                     '   <span class="panel-title" ng-bind="fmTitle"></span>' +
-                    '   <div class="fm-ui-popup-cross" ng-click="ctrl.safeClose()">✕</div>' +
+                    '   <button type="button" class="close" aria-hidden="true" ng-click="ctrl.safeClose()">&times;</button>' +
                     '  </div>' +
                     '  <div class="panel-body" ng-transclude></div>' +
                     ' </div>' +

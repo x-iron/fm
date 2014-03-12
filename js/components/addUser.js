@@ -1,6 +1,6 @@
 define(['app', 'config'], function (app, config) {
     var cmpName = 'addUser';
-    app.compileProvider.directive(cmpName, ['$q', function ($q) {
+    app.compileProvider.directive(cmpName, ['$q', '$compile','popupMsg', function ($q, $compile, popupMsg) {
         return {
             restrict: 'A',
             scope: true,
@@ -19,6 +19,10 @@ define(['app', 'config'], function (app, config) {
                 ctrl.cancel = function () {
                     closeDeferred = $q.defer();
                     //show confirm window
+                    popupMsg.alert({
+                        msg: 'sure?',
+                        deferred: closeDeferred
+                    });
                     win.close(closeDeferred.promise);
                 };
                 win.safeClose = ctrl.cancel;
