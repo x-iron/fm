@@ -24,7 +24,6 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                         userApi.checkLogin().then(function (o) {
                             hasLogin = o.logined;
                             loginUser = o.name;
-                            console.log('login state change', hasLogin)
                         });
                     },
                     isAdmin: function () {
@@ -232,7 +231,9 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                 }
             }
         })
-        .directive('fmOpen', function ($compile, loader) {
+        .directive('fmOpen', function ($compile, loader, $rootScope) {
+            var fmOpenScope;
+            var selectedClassName = 'active';
             return {
                 restrict: 'A',
                 link: function (scope, el, attrs) {
@@ -245,25 +246,44 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                     };
                     var openAtWindow = (target == 'window');
                     var container = containers[target] || angular.element(document.body).find(target);
+                    scope.$on('clearSelection', function() {
+                        el.removeClass(selectedClassName);
+                    });
                     el.on('click', function () {
                         loader.show();
                         require([cmp], function () {
                             loader.hide();
+                            if (!openAtWindow) {
+                                scope.$broadcast('beforeSelect', cmp);
+                                el.addClass(selectedClassName);
+                            }
                             var template = angular.element('<div fm-container></div>');
                             template.append(angular.element('<div fm-cmp></div>').attr(cmp.replace(/([A-Z])/g, '-$1'), ''));
-                            openAtWindow && template.attr('fm-window', '');
+                            template.attr(openAtWindow ? 'fm-window' : 'fm-panel', '');
                             openAtWindow && template.attr('fm-width', windowWidth);
-                            openAtWindow && template.attr('fm-title', title);
-                            if (!openAtWindow) {
-                                scope.title = title;
-                                container.empty();
-                            }
-                            var cmpDom = $compile(template)(scope);
+                            template.attr('fm-title', title);
+                            fmOpenScope && fmOpenScope.$destroy();
+                            fmOpenScope = $rootScope.$new();
+                            var cmpDom = $compile(template)(fmOpenScope);
                             container.append(cmpDom);
                         });
                     });
                 }
-            }
+            };
+        })
+        .directive('fmPanel', function () {
+            return {
+                restrict: 'A',
+                scope: true,
+                controller: function($scope) {
+                },
+                link: function(scope, el, attrs) {
+                    scope.title = attrs.fmTitle;
+                    scope.$on('$destroy', function() {
+                        el.remove();
+                    })
+                }
+            };
         })
         .directive('fmWindow', function () {
             var zIndex = 10000;
@@ -320,6 +340,39 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
             function decreaseZIndex() {
                 zIndex = zIndex - 2;
             }
+        })
+        .directive('fmLeftMenuContainer', function (user, $location) {
+            return {
+                restrict: 'A',
+                scope: true,
+                controller: function($scope) {
+                    $scope.$on('beforeSelect', function(e, selectedItem) {
+                        $scope.$broadcast('clearSelection');
+                    });
+                }
+            };
+        })
+        .directive('fmHash', function (user, $location) {
+            return {
+                restrict: 'A',
+                link: function (scope, el, attrs) {
+                    var hash = attrs.fmHash;
+                    el.on('click', function() {
+                        $location.hash(hash);
+                    });
+                    hash == $location.hash() && el.triggerHandler('click');
+                }
+            };
+        })
+        .directive('fmTitle', function (user, $location) {
+            return {
+                restrict: 'A',
+                link: function (scope, el, attrs) {
+                    el.on('click', function() {
+                        scope.title = attrs.fmTitle;
+                    });
+                }
+            };
         })
         .directive('requireAdmin', function (user) {
             return {

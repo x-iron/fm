@@ -19,7 +19,7 @@ define(['app', 'config'], function (app, config) {
                 ctrl.cancel = function () {
                     closeDeferred = $q.defer();
                     //show confirm window
-                    popupMsg.alert({
+                    popupMsg.confirm({
                         msg: 'sure?',
                         deferred: closeDeferred
                     });
@@ -29,7 +29,6 @@ define(['app', 'config'], function (app, config) {
                 ctrl.confirmClose = function (doClose) {
                     if (closeDeferred == null) return;
                     doClose ? closeDeferred.resolve() : closeDeferred.reject();
-                    console.log(closeDeferred);
                 };
             },
             templateUrl: config.componentUrl + cmpName + '.html'

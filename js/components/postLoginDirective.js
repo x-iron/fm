@@ -27,6 +27,7 @@ define(['require', 'app', 'config', 'underscore'], function (require, app, confi
                             templateUrl: config.componentUrl + cmp + 'Template.html',
                             controller: [serviceName, '$injector', function (service, $injector) {
                                 $scope.service = service.$get($scope, $injector);
+                                $scope.topMenu = cmp;
                             }],
                             resolve: resolveFactory(serviceName, cmp)
                         });
