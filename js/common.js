@@ -281,7 +281,7 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                     scope.title = attrs.fmTitle;
                     scope.$on('$destroy', function() {
                         el.remove();
-                    })
+                    });
                 }
             };
         })
