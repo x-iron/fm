@@ -341,7 +341,7 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                 zIndex = zIndex - 2;
             }
         })
-        .directive('fmLeftMenuContainer', function (user, $location) {
+        .directive('fmLeftMenuContainer', function () {
             return {
                 restrict: 'A',
                 scope: true,
@@ -364,13 +364,80 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                 }
             };
         })
-        .directive('fmTitle', function (user, $location) {
+        .directive('fmTitle', function () {
             return {
                 restrict: 'A',
                 link: function (scope, el, attrs) {
                     el.on('click', function() {
                         scope.title = attrs.fmTitle;
                     });
+                }
+            };
+        })
+        .directive('fmFlow', function ($compile) {
+            return {
+                restrict: 'A',
+                controller: function($scope, $element, $attrs, $transclude) {
+                    var firstStepCmp = null;
+                    var stepsConfig = {};
+                    this.setFirstStep = function(cmp) {
+                        firstStepCmp = cmp;
+                    };
+                    this.getFirstStep = function() {
+                        return firstStepCmp;
+                    };
+                    this.addStep = function(stepName, config) {
+                        stepsConfig[stepName] = config;
+                    };
+                    $scope.$on('next', onSwitch);
+                    $scope.$on('back', onSwitch);
+                    $scope.$on('cancel', onSwitch);
+                    $scope.$on('done', onSwitch);
+
+
+                    function onSwitch(e, params) {
+                        var action = e.name;
+                        var currentStepName = params.fmStepName;
+                        var handler = stepsConfig[currentStepName].rules[action];
+                        showStep(_.isFunction(handler) ? handler() : handler);
+                        /* console.log(e);
+                         console.log(params);*/
+                    }
+
+                    function showStep(stepName) {
+                        var cmp = stepsConfig[stepName].cmp;
+                        console.log(stepsConfig)
+                        require([cmp], function() {
+                            $element.append($compile('<div ' + cmp + ' fm-step-name="' + stepName + '"></div>')($scope.$new()));
+                        });
+                    }
+                },
+                require: 'fmFlow',
+                link: function (scope, el, attrs, ctrl) {
+                    var firstStepCmp = ctrl.getFirstStep();
+                    require([firstStepCmp], function() {
+                        el.append($compile('<div ' + firstStepCmp + ' fm-step-name="' + firstStepCmp + '"></div>')(scope.$new()));
+                    });
+                }
+            };
+        })
+        .directive('fmFlowStep', function () {
+            return {
+                restrict: 'A',
+                require: '^fmFlow',
+                link: function (scope, el, attrs, ctrl) {
+                    var cmp = attrs.fmFlowStep;
+                    var isFirstStep = attrs.hasOwnProperty('fmFirstStep');
+                    isFirstStep && ctrl.setFirstStep(cmp);
+                    var stepName = attrs.fmFlowStep || attrs.fmFlowStepName;
+                    attrs.$set('fmStepName', stepName);
+                    ctrl.addStep(stepName, {
+                        cmp: cmp,
+                        rules: {
+                            next: attrs.fmFlowNext,
+                            back: attrs.fmFlowBack
+                        }
+                    })
                 }
             };
         })
