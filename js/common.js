@@ -379,7 +379,7 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                 restrict: 'A',
                 controller: function($scope, $element, $attrs, $transclude) {
                     var firstStepCmp = null;
-                    var stepsConfig = {};
+                    var stepsConfig = {$currentStep: ''};
                     this.setFirstStep = function(cmp) {
                         firstStepCmp = cmp;
                     };
@@ -393,33 +393,64 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                     $scope.$on('back', onSwitch);
                     $scope.$on('cancel', onSwitch);
                     $scope.$on('done', onSwitch);
-
+                    this.getStepsConfig = function() {
+                        return stepsConfig;
+                    };
 
                     function onSwitch(e, params) {
                         var action = e.name;
                         var currentStepName = params.fmStepName;
-                        var handler = stepsConfig[currentStepName].rules[action];
-                        showStep(_.isFunction(handler) ? handler() : handler);
-                        /* console.log(e);
-                         console.log(params);*/
-                    }
-
-                    function showStep(stepName) {
-                        var cmp = stepsConfig[stepName].cmp;
-                        console.log(stepsConfig)
-                        require([cmp], function() {
-                            $element.append($compile('<div ' + cmp + ' fm-step-name="' + stepName + '"></div>')($scope.$new()));
+                        var actionConfig = stepsConfig[currentStepName].rules[action];
+                        var handler = actionConfig.name;
+                        var restore = actionConfig.restore;
+                        restore == null && (restore = (action == 'back'));
+                        showStep({
+                            stepsConfig: stepsConfig,
+                            scope: $scope,
+                            stepName :_.isFunction(handler) ? handler() : handler,
+                            el: $element,
+                            restore: _.isFunction(restore) ? restore() : restore
                         });
                     }
                 },
                 require: 'fmFlow',
                 link: function (scope, el, attrs, ctrl) {
-                    var firstStepCmp = ctrl.getFirstStep();
-                    require([firstStepCmp], function() {
-                        el.append($compile('<div ' + firstStepCmp + ' fm-step-name="' + firstStepCmp + '"></div>')(scope.$new()));
+                    showStep({
+                        stepsConfig: ctrl.getStepsConfig(),
+                        scope: scope,
+                        stepName :ctrl.getFirstStep(),
+                        el: el
                     });
                 }
             };
+            function showStep(config) {
+                var stepsConfig = config.stepsConfig;
+                var stepName = config.stepName;
+                var scope = config.scope;
+                var el = config.el;
+                var restore = config.restore;
+                var currentStepConfig = stepsConfig[stepsConfig.$currentStep] || {};
+                var cmp = stepsConfig[stepName].cmp;
+                var currentEl = currentStepConfig.el;
+                currentEl && currentEl.css({'display': 'none'});
+
+                require([cmp], function() {
+                    var oldScope = stepsConfig[stepName].scope;
+                    var oldEl = stepsConfig[stepName].el;
+                    if (!restore || oldScope == null) {    // create new el and scope
+                        oldScope && oldScope.$destroy();
+                        oldEl && oldEl.remove();
+                        var stepScope = scope.$new();
+                        var stepEl = $compile('<div ' + cmp + ' fm-step-name="' + stepName + '"></div>')(stepScope);
+                        stepsConfig[stepName].el = stepEl;
+                        stepsConfig[stepName].scope = stepScope;
+                        el.append(stepEl);
+                    } else {
+                        oldEl.css({'display': 'block'});
+                    }
+                    stepsConfig.$currentStep = stepName;
+                });
+            }
         })
         .directive('fmFlowStep', function () {
             return {
@@ -427,15 +458,15 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                 require: '^fmFlow',
                 link: function (scope, el, attrs, ctrl) {
                     var cmp = attrs.fmFlowStep;
-                    var isFirstStep = attrs.hasOwnProperty('fmFirstStep');
-                    isFirstStep && ctrl.setFirstStep(cmp);
                     var stepName = attrs.fmFlowStep || attrs.fmFlowStepName;
+                    var isFirstStep = attrs.hasOwnProperty('fmFirstStep');
+                    isFirstStep && ctrl.setFirstStep(stepName);
                     attrs.$set('fmStepName', stepName);
                     ctrl.addStep(stepName, {
                         cmp: cmp,
                         rules: {
-                            next: attrs.fmFlowNext,
-                            back: attrs.fmFlowBack
+                            next: {name:attrs.fmFlowNext},
+                            back: {name:attrs.fmFlowBack}
                         }
                     })
                 }
