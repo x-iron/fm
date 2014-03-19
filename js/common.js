@@ -403,7 +403,7 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                         var actionConfig = stepsConfig[currentStepName].rules[action];
                         var handler = actionConfig.name;
                         var restore = actionConfig.restore;
-                        restore == null && (restore = (action == 'back'));
+                        (restore == null) && (restore = (action == 'back'));
                         showStep({
                             stepsConfig: stepsConfig,
                             scope: $scope,
@@ -465,12 +465,22 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                     ctrl.addStep(stepName, {
                         cmp: cmp,
                         rules: {
-                            next: {name:attrs.fmFlowNext},
-                            back: {name:attrs.fmFlowBack}
+                            next: parseAction(attrs.fmFlowNext),
+                            back: parseAction(attrs.fmFlowBack)
                         }
                     })
                 }
             };
+            function parseAction(actionStr) {
+                actionStr = actionStr || '';
+                var restore;
+                /^restore:/.test(actionStr) && (restore = true);
+                /^new:/.test(actionStr) && (restore = false);
+                return {
+                    name: actionStr.replace(/(restore|new):/, ''),
+                    restore:  restore
+                };
+            }
         })
         .directive('requireAdmin', function (user) {
             return {
