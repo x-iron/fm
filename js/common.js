@@ -379,6 +379,23 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                 restrict: 'A',
                 controller: function($scope, $element, $attrs, $transclude) {
                     var firstStepCmp = null;
+                    /**
+                     *  stepsConfig looks like:
+                     *  {
+                     *      $currentStep: stepName
+                     *      stepName : {
+                     *          cmp
+                     *          el
+                     *          scope
+                     *          rules: {
+                     *              next/back: {
+                     *                  name
+                     *                  restore: true/false
+                     *              }
+                     *          }
+                     *      }
+                     *   }
+                     **/
                     var stepsConfig = {$currentStep: ''};
                     this.setFirstStep = function(cmp) {
                         firstStepCmp = cmp;
@@ -389,6 +406,9 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                     this.addStep = function(stepName, config) {
                         stepsConfig[stepName] = config;
                     };
+                    $scope.$on('$destroy', function() {
+                        console.log(arguments)
+                    });
                     $scope.$on('next', onSwitch);
                     $scope.$on('back', onSwitch);
                     $scope.$on('cancel', onSwitch);
@@ -400,7 +420,7 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                     function onSwitch(e, params) {
                         var action = e.name;
                         var currentStepName = params.fmStepName;
-                        var actionConfig = stepsConfig[currentStepName].rules[action];
+                        var actionConfig = params.actionConfig || stepsConfig[currentStepName].rules[action];
                         var handler = actionConfig.name;
                         var restore = actionConfig.restore;
                         (restore == null) && (restore = (action == 'back'));
@@ -424,6 +444,7 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                 }
             };
             function showStep(config) {
+
                 var stepsConfig = config.stepsConfig;
                 var stepName = config.stepName;
                 var scope = config.scope;
