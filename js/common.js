@@ -258,7 +258,12 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                                 el.addClass(selectedClassName);
                             }
                             var template = angular.element('<div fm-container></div>');
-                            template.append(angular.element('<div fm-cmp></div>').attr(cmp.replace(/([A-Z])/g, '-$1'), ''));
+                            var cmpAttr = cmp.replace(/([A-Z])/g, '-$1');
+                            if (openAtWindow) {
+                                template.attr('fm-cmp', cmpAttr);
+                            } else {
+                                template.append(angular.element('<div fm-cmp></div>').attr(cmpAttr, ''));
+                            }
                             template.attr(openAtWindow ? 'fm-window' : 'fm-panel', '');
                             openAtWindow && template.attr('fm-width', windowWidth);
                             template.attr('fm-title', title);
@@ -292,6 +297,7 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                 scope: true,
                 replace: true,
                 controller: ['$scope', '$element', '$attrs', '$transclude', function ($scope, $element, $attrs, $transclude) {
+                    var self = this;
                     var fmWidth = $attrs.fmWidth || '400px';
                     increaseZIndex();
                     $scope.winStyle = {
@@ -305,6 +311,12 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                         decreaseZIndex();
                         $element.remove();
                     });
+                    $scope.$on('close', function(e, promise) {
+                        self.close(promise);
+                    });
+                    $scope.$on('safeClose', function(e, fn) {
+                        self.safeClose = fn;
+                    });
                     this.close = function (promise) {
                         _.isObject(promise) ? promise.then(closeFn) : closeFn();
                         function closeFn() {
@@ -312,25 +324,28 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                             $scope.$destroy();
                         }
                     };
+                    this.safeClose = this.close;
                 }],
                 link: function (scope, el, attrs) {
                     scope.fmTitle = attrs.fmTitle;   // wait for interpolate
-                    var safeClose = scope.ctrl.safeClose;
-                    var close = scope.ctrl.close;
-                    scope.ctrl.safeClose = (_.isFunction(safeClose) ? safeClose : close);
                 },
-                controllerAs: 'ctrl',
                 transclude: true,
-                template: '<div>' +
-                    ' <div class="fm-ui-popup-container panel panel-primary" ng-style="winStyle">' +
-                    '  <div class="panel-heading">' +
-                    '   <span class="panel-title" ng-bind="fmTitle"></span>' +
-                    '   <button type="button" class="close" aria-hidden="true" ng-click="ctrl.safeClose()">&times;</button>' +
-                    '  </div>' +
-                    '  <div class="panel-body" ng-transclude></div>' +
-                    ' </div>' +
-                    ' <div ng-style="maskStyle" class="fm-ui-popup-maskLayer"></div>' +
-                    '</div>'
+                controllerAs: 'ctrl',
+                template: function (el, attrs) {
+                    return '<div>' +
+                        ' <div class="fm-ui-popup-container panel panel-primary" ng-style="winStyle">' +
+                        '  <div class="panel-heading">' +
+                        '   <span class="panel-title" ng-bind="fmTitle"></span>' +
+                        '   <button type="button" class="close" aria-hidden="true" ng-click="ctrl.safeClose()">&times;</button>' +
+                        '  </div>' +
+                        '  <div class="panel-body">' +
+                        '   <div ' + attrs.fmCmp + '></div>' +
+                        '   <div ng-transclude></div>' +
+                        '  </div>' +
+                        ' </div>' +
+                        ' <div ng-style="maskStyle" class="fm-ui-popup-maskLayer"></div>' +
+                        '</div>';
+                }
 
             };
             function increaseZIndex() {
@@ -403,12 +418,18 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                     this.getFirstStep = function() {
                         return firstStepCmp;
                     };
-                    this.addStep = function(stepName, config) {
+                    this.setStep = function(stepName, config) {
+                        _.each(['next', 'back'], function(keyName) {
+                            parseConfig(keyName);
+                        });
                         stepsConfig[stepName] = config;
+                        function parseConfig(keyName) {
+                            var ruleConfig = config.rules[keyName];
+                            if (_.isString(ruleConfig)) {
+                                config.rules[keyName] = parseAction(ruleConfig);
+                            }
+                        }
                     };
-                    $scope.$on('$destroy', function() {
-                        console.log(arguments)
-                    });
                     $scope.$on('next', onSwitch);
                     $scope.$on('back', onSwitch);
                     $scope.$on('cancel', onSwitch);
@@ -416,11 +437,15 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                     this.getStepsConfig = function() {
                         return stepsConfig;
                     };
+                    this.parseAction = parseAction;
 
-                    function onSwitch(e, params) {
+                    function onSwitch(e, params, ruleConfig) {
                         var action = e.name;
                         var currentStepName = params.fmStepName;
-                        var actionConfig = params.actionConfig || stepsConfig[currentStepName].rules[action];
+                        var actionConfig = parseAction(ruleConfig) || params.actionConfig || stepsConfig[currentStepName].rules[action];
+                        if (actionConfig == null) {
+                            throw Error("rule hasn't configured");
+                        }
                         var handler = actionConfig.name;
                         var restore = actionConfig.restore;
                         (restore == null) && (restore = (action == 'back'));
@@ -472,6 +497,17 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                     stepsConfig.$currentStep = stepName;
                 });
             }
+
+            function parseAction(actionStr) {
+                if (actionStr == null) return null;
+                var restore;
+                /^restore:/.test(actionStr) && (restore = true);
+                /^new:/.test(actionStr) && (restore = false);
+                return {
+                    name: actionStr.replace(/(restore|new):/, ''),
+                    restore:  restore
+                };
+            }
         })
         .directive('fmFlowStep', function () {
             return {
@@ -483,25 +519,16 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                     var isFirstStep = attrs.hasOwnProperty('fmFirstStep');
                     isFirstStep && ctrl.setFirstStep(stepName);
                     attrs.$set('fmStepName', stepName);
-                    ctrl.addStep(stepName, {
+                    ctrl.setStep(stepName, {
                         cmp: cmp,
                         rules: {
-                            next: parseAction(attrs.fmFlowNext),
-                            back: parseAction(attrs.fmFlowBack)
+                            next: attrs.fmFlowNext,
+                            back: attrs.fmFlowBack
                         }
                     })
                 }
             };
-            function parseAction(actionStr) {
-                actionStr = actionStr || '';
-                var restore;
-                /^restore:/.test(actionStr) && (restore = true);
-                /^new:/.test(actionStr) && (restore = false);
-                return {
-                    name: actionStr.replace(/(restore|new):/, ''),
-                    restore:  restore
-                };
-            }
+
         })
         .directive('requireAdmin', function (user) {
             return {

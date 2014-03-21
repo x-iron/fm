@@ -6,14 +6,14 @@ define(['app', 'config', 'underscore'], function (app, config, _) {
             scope: true,
             controller: function ($scope, $element, $attrs) {
                 this.next = function() {
-                    $scope.$emit('next',
-                        _.extend($attrs, {
-                            actionConfig: {  //override rules
-                                name: 'step2',    // can be function
-                                restore: false    // can be function
-                            }
-                        })
-                    );
+                    var params = _.extend($attrs, {
+                        actionConfig: {  //override rules
+                            name: 'step2',    // can be function
+                            restore: false    // can be function
+                        }
+                    });
+                    var action = 'restore:step2';  // action has higher priority than actionConfig
+                    $scope.$emit('next', params, action);
                 };
             },
             controllerAs:'ctrl',

@@ -5,31 +5,23 @@ define(['app', 'config'], function (app, config) {
             restrict: 'A',
             scope: true,
             controller: ['$scope', function ($scope) {
-
-            }],
-            require: ['?^fmWindow', cmpName],
-            controllerAs: 'ctrl',
-            link: function (scope, el, attrs, ctrls) {
                 var closeDeferred;
-                var win = ctrls[0];
-                var ctrl = ctrls[1];
-                ctrl.add = function () {
-                    win.close();
+                this.add = function () {
+                    $scope.$emit('close');
                 };
-                ctrl.cancel = function () {
+                this.cancel = function () {
                     closeDeferred = $q.defer();
                     //show confirm window
                     popupMsg.confirm({
                         msg: 'sure?',
                         deferred: closeDeferred
                     });
-                    win.close(closeDeferred.promise);
+                    $scope.$emit('close', closeDeferred.promise);
                 };
-                win.safeClose = ctrl.cancel;
-                ctrl.confirmClose = function (doClose) {
-                    if (closeDeferred == null) return;
-                    doClose ? closeDeferred.resolve() : closeDeferred.reject();
-                };
+                $scope.$emit('safeClose', this.cancel);
+            }],
+            controllerAs: 'ctrl',
+            link: function (scope, el, attrs, ctrl) {
             },
             templateUrl: config.componentUrl + cmpName + '.html'
         };

@@ -8,7 +8,7 @@ define(['app', 'config'], function (app, config) {
                     $scope.$emit('next', $attrs);
                 };
                 this.back = function() {
-                    $scope.$emit('back', $attrs);
+                    $scope.$emit('back', $attrs, 'new:step1');
                 };
             },
             controllerAs: 'ctrl',
