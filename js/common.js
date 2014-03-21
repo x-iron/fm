@@ -78,7 +78,7 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
 
                     }
                 };
-            }
+            };
         })
         .provider('loader', function () {
             this.$get = function () {
@@ -132,7 +132,7 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                         loadedCss.push(css);
                     }
                 };
-            }
+            };
         })
         .provider('popupMsg', function () {
             function fn($compile, $rootScope) {
@@ -183,15 +183,15 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                     }
                 },
                 controllerAs: 'ctrl',
-                template: '<div fm-window fm-title="{{title}}">' +
+                template: '<div fm-window fm-title="{{title}}">' +    //transclude
                     ' <p ng-bind="msg"></p>' +
                     ' <div>' +
                     '   <button ng-click="ctrl.ok()" class="btn btn-primary">OK</button>' +
                     ' </div>' +
                     '</div>'
-            }
+            };
         })
-        .directive('fmPopupConfirm', function (cssLoader) {
+        .directive('fmPopupConfirm', function () {
             return {
                 restrict: 'A',
                 controller: function($scope, $element) {
@@ -214,14 +214,14 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                     }
                 },
                 controllerAs: 'ctrl',
-                template: '<div fm-window fm-title="{{title}}">' +
+                template: '<div fm-window fm-title="{{title}}">' +  //transclude
                     ' <p ng-bind="msg"></p>' +
                     ' <div>' +
                     '  <button ng-click="ctrl.no()" class="btn btn-primary">No</button>' +
                     '  <button ng-click="ctrl.yes()" class="btn btn-primary">Yes</button>' +
                     ' </div>' +
                     '</div>'
-            }
+            };
         })
         .directive('fmCss', function (cssLoader) {
             return {
@@ -229,7 +229,7 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                 link: function (scope, el, attrs) {
                     cssLoader.load(attrs.fmCss);
                 }
-            }
+            };
         })
         .directive('fmOpen', function ($compile, loader, $rootScope) {
             var fmOpenScope;
@@ -259,7 +259,7 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                             }
                             var template = angular.element('<div fm-container></div>');
                             var cmpAttr = cmp.replace(/([A-Z])/g, '-$1');
-                            if (openAtWindow) {
+                            if (openAtWindow) {  // fmWindow want to receive event emitted by fmCmp
                                 template.attr('fm-cmp', cmpAttr);
                             } else {
                                 template.append(angular.element('<div fm-cmp></div>').attr(cmpAttr, ''));
@@ -346,7 +346,6 @@ define(['angular', 'config', 'underscore', 'require', 'api'], function (angular,
                         ' <div ng-style="maskStyle" class="fm-ui-popup-maskLayer"></div>' +
                         '</div>';
                 }
-
             };
             function increaseZIndex() {
                 zIndex = zIndex + 2;
